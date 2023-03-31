@@ -20,7 +20,7 @@ async def rating_table(msg: Message, user_db: UserRepo, point_db: PointRepo):
         elif rang == 3:
             medal = '🥉'
         table += f'{rang}. {medal} {user.full_name} {await point_db.get_user_points(user.user_id, count=True)}\n'
-    await msg.answer(table, reply_markup=admin_kb)
+    await msg.answer(table, reply_markup=admin_kb('ua'))
 
 
 def setup(dp: Dispatcher):

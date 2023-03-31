@@ -85,7 +85,7 @@ async def save_points(msg: Message, user_db: UserRepo, state: FSMContext):
     elif int(msg.text) <= 0:
         return await msg.answer(Text.send.too_small[user.lang])
     await state.update_data(points=int(msg.text))
-    await msg.answer(text=Text.send.reg_coins[user.lang].format(msg.text), reply_markup=values_kb())
+    await msg.answer(text=Text.send.reg_coins[user.lang].format(msg.text), reply_markup=values_kb(user.lang))
     await state.update_data(value='')
     await SendSG.Value.set()
 
@@ -113,7 +113,7 @@ async def input_custom_value(msg: Message, user_db: UserRepo):
 
 async def confirm(msg: Message, user_db: UserRepo):
     lang = await user_db.get_language(msg.from_user.id)
-    await msg.answer(Text.send.all_is_good[lang], reply_markup=confirm_send_kb)
+    await msg.answer(Text.send.all_is_good[lang], reply_markup=confirm_send_kb(lang))
     await SendSG.Confirm.set()
 
 
@@ -140,7 +140,7 @@ async def send(msg: Message, user_db: UserRepo, point_db: PointRepo,
     else:
         answer_text += Text.send.coins_remain[lang].format(remain_points)
         await msg.answer(answer_text, reply_markup=menu_kb(lang))
-    await msg.bot.send_message(user.user_id, text=Text.send.message_thank[lang].format(points, gifter.full_name, value, message))
+    await msg.bot.send_message(user.user_id, text=Text.send.message_thank[user.lang].format(points, gifter.full_name, value, message))
     await state.finish()
     # await send_points(msg, state, user_db)
     await state.update_data(gefter_id=msg.from_user.id)
@@ -157,9 +157,10 @@ async def send(msg: Message, user_db: UserRepo, point_db: PointRepo,
 def setup(dp: Dispatcher):
     dp.register_message_handler(send_points, text=[Buttons.menu.send_points['ua'], Buttons.menu.send_points['ru']],
                                 state='*')
-    # dp.register_message_handler(select_command, text=[Buttons.send.select_user['ua'], [Buttons.send.select_user['ru']]],
+    # dp.register_message_handler(select_command, ],
     #                             state='*')
-    dp.register_message_handler(select_user, state=SendSG.Command)
+    dp.register_message_handler(select_user, text=[Buttons.send.select_user['ua'], [Buttons.send.select_user['ru']]],
+                                state='*')
     dp.register_message_handler(save_user, state=SendSG.User)
     dp.register_message_handler(save_message, state=SendSG.Message)
     dp.register_message_handler(save_points, state=SendSG.Points)

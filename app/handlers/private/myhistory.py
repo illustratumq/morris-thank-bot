@@ -30,7 +30,7 @@ async def my_history_pre(msg: Message, point_db: PointRepo, user_db: UserRepo,
     await state.finish()
     points_i_send = await point_db.get_gifter_points(msg.from_user.id)
     points_to_me = await point_db.get_user_points(msg.from_user.id)
-    if msg.text in list(Buttons.menu.to_me_send.values()):
+    if msg.text in list(Buttons.menu.to_me_send.values(lang)):
         if len(points_to_me) == 0:
             await msg.answer(Text.history.no_coins[lang], reply_markup=back_to_history_kb(lang))
             return

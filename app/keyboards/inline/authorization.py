@@ -7,7 +7,7 @@ lang_kb = ReplyKeyboardMarkup(
     resize_keyboard=True,
     one_time_keyboard=False,
     keyboard=[
-        [KeyboardButton('Українська'), KeyboardButton('Російська')]
+        [KeyboardButton('Українська'), KeyboardButton('Русский')]
     ]
 )
 

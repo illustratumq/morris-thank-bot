@@ -15,15 +15,16 @@ def send_kb(lang: str):
     )
 
 
-confirm_send_kb = ReplyKeyboardMarkup(
-    row_width=1,
-    resize_keyboard=True,
-    one_time_keyboard=False,
-    keyboard=[
-        [KeyboardButton(Buttons.send.confirm)],
-        [KeyboardButton(Buttons.menu.main_menu)]
-    ]
-)
+def confirm_send_kb(lang):
+    return ReplyKeyboardMarkup(
+        row_width=1,
+        resize_keyboard=True,
+        one_time_keyboard=False,
+        keyboard=[
+            [KeyboardButton(Buttons.send.confirm[lang])],
+            [KeyboardButton(Buttons.menu.main_menu[lang])]
+        ]
+    )
 
 
 def select_user_commands(commands: list, lang: str):
@@ -76,7 +77,7 @@ def values_kb(lang: str, next_button: bool = False, added_values: list[str] = No
     keyboard = []
     cache = []
     i = 0
-    values: list = Buttons.send.values()
+    values: list = Buttons.send.values(lang)
     if added_values:
         for val in added_values:
             if val in values:

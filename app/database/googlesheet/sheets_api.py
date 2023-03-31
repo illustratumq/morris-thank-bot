@@ -80,7 +80,8 @@ class GoogleSheet:
         answer = []
         for row in result:
             if len(row) >= 2:
-                name, auth_data = row
+                name = row[0]
+                auth_data = row[1]
                 answer.append((str(name).strip(), str(auth_data).strip()))
         return answer
 

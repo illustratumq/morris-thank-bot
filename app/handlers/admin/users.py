@@ -18,15 +18,17 @@ async def delete_user(msg: Message, user_db: UserRepo):
     users = await user_db.get_all()
     me = await user_db.get_user(msg.from_user.id)
     await msg.answer('Оберіть учасника якого треба видалити',
-                     reply_markup=await select_user_kb(users, me.full_name))
-    await msg.answer('Або знайдіть його через пошук', reply_markup=auth_kb('Email'))
+                     reply_markup=await select_user_kb(users, me.full_name, me.lang))
+    await msg.answer('Або знайдіть його через пошук', reply_markup=auth_kb('Email', me.lang))
     await DeleteSG.User.set()
 
 
 async def confirm(msg: Message, user_db: UserRepo, state: FSMContext):
     user = await user_db.get_user_by_name(msg.text)
+    lang = await user_db.get_language(msg.from_user.id)
     if user:
-        await msg.answer(f'Ви дійсно бажаєте видалити {user.full_name} видалено з бази даних?', reply_markup=delete_kb)
+        await msg.answer(f'Ви дійсно бажаєте видалити {user.full_name} видалено з бази даних?',
+                         reply_markup=delete_kb(lang))
         await state.update_data(user_id=user.user_id)
     else:
         await msg.answer('Не знайшов такого користувача')
@@ -36,17 +38,20 @@ async def confirm(msg: Message, user_db: UserRepo, state: FSMContext):
 async def deleting(msg: Message, user_db: UserRepo, state: FSMContext):
     data = await state.get_data()
     await user_db.delete_user(user_id=int(data['user_id']))
-    await msg.answer('Користувача було успішно видалено', reply_markup=admin_kb)
+    lang = await user_db.get_language(msg.from_user.id)
+    await msg.answer('Користувача було успішно видалено', reply_markup=admin_kb(lang))
     await state.finish()
 
 
-async def admin(msg: Message, state: FSMContext):
+async def admin(msg: Message, state: FSMContext, user_db: UserRepo):
     await state.finish()
-    await msg.answer('Вітаю в панелі Адміністратора', reply_markup=admin_kb)
+    lang = await user_db.get_language(msg.from_user.id)
+    await msg.answer('Вітаю в панелі Адміністратора', reply_markup=admin_kb(lang))
 
 
-async def update_users(msg: Message):
-    await msg.answer('Оберіть, що саме оновити', reply_markup=update_kb)
+async def update_users(msg: Message, user_db: UserRepo):
+    lang = await user_db.get_language(msg.from_user.id)
+    await msg.answer('Оберіть, що саме оновити', reply_markup=update_kb(lang))
 
 
 async def update_phones(msg: Message, user_db: UserRepo, google_sheet: GoogleSheet, config: Config):

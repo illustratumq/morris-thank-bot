@@ -60,9 +60,9 @@ async def statistic(msg: Message, user_db: UserRepo, point_db: PointRepo):
         )
         text += f'<b>Найактивніші користувачі</b>:\n{the_most_active_users}\n\n'
         if not image:
-            await msg.answer(text, reply_markup=admin_kb)
+            await msg.answer(text, reply_markup=admin_kb('ua'))
         else:
-            await msg.answer_photo(InputFile('statistic.png'), caption=text, reply_markup=admin_kb)
+            await msg.answer_photo(InputFile('statistic.png'), caption=text, reply_markup=admin_kb('ua'))
             os.remove('statistic.png')
     # except:
     #     await msg.answer('Упс, занадто мало даних :(', reply_markup=admin_kb)

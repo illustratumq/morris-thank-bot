@@ -1,6 +1,6 @@
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
-from aiogram.types import Message, InlineQuery
+from aiogram.types import Message, InlineQuery, ReplyKeyboardRemove
 
 from app.config import Config
 from app.database.googlesheet.sheets_api import GoogleSheet
@@ -16,7 +16,7 @@ from app.states.states import AuthSG, SendSG, DeleteSG
 
 async def repeat_authorization_cmd(msg: Message, config: Config, user_db: UserRepo):
     lang = await user_db.get_language(msg.from_user.id)
-    await msg.answer(Text.auth.auth, reply_markup=auth_kb(config.misc.auth_method, lang))
+    await msg.answer(Text.auth.auth[lang], reply_markup=auth_kb(config.misc.auth_method, lang))
     await AuthSG.AuthData.set()
 
 
@@ -27,18 +27,19 @@ async def authorization_cmd(msg: Message, user_db: UserRepo):
         mention=msg.from_user.mention, status=UserStatusEnum.UNAUTHORIZED
     )
     text = (
-        'Оберіть, будь ласка, мову'
+        '➡ Оберіть, будь ласка, мову\n➡ Выберите, пожалуйста, язык'
     )
     await msg.answer(text, reply_markup=lang_kb)
     await AuthSG.Lang.set()
 
 
 async def language_cmd(msg: Message, config: Config, user_db: UserRepo):
-    if msg.text == 'Російська':
+    if msg.text == 'Русский':
         lang = 'ru'
     else:
         lang = 'ua'
     await user_db.update_user(msg.from_user.id, lang=lang)
+    await msg.answer(Text.auth.lang_setting[lang], reply_markup=ReplyKeyboardRemove())
     await msg.answer(Text.auth.greeting[lang], reply_markup=auth_kb(config.misc.auth_method, lang))
     await AuthSG.AuthData.set()
 
@@ -62,14 +63,14 @@ async def save_user_email(msg: Message, user_db: UserRepo, state: FSMContext,
             status=UserStatusEnum.AUTHORIZED
         )
         await msg.answer(Text.auth.your_name_is[lang].format(google_sheet_user[0]), reply_markup=to_menu_kb(lang))
-        # google_sheet.write_event(
-        #     spreadsheet_id=config.misc.user_spreadsheet_id,
-        #     action='Авторизація в боті',
-        #     sender_name='Від бота',
-        #     getter_name=google_sheet_user[0],
-        #     points=100,
-        #     val='Користувач', message='Початкове нарахування', sheet_name='Registration'
-        # )
+        google_sheet.write_event(
+            spreadsheet_id=config.misc.user_spreadsheet_id,
+            action='Авторизація в боті',
+            sender_name='Від бота',
+            getter_name=google_sheet_user[0],
+            points=100,
+            val='Користувач', message='Початкове нарахування', sheet_name='Registration'
+        )
         await state.finish()
     else:
         await msg.answer(Text.auth.email_not_found[lang], reply_markup=auth_kb(config.misc.auth_method, lang))
@@ -98,7 +99,12 @@ async def query_username_list(query: InlineQuery, google_sheet: GoogleSheet, con
     results = []
     if query_text != '':
         for user in sheet_users:
-            first_name, second_name = user[0].split(' ')
+            user_data = user[0].split(' ')
+            if len(user_data) >= 2:
+                first_name, second_name = user_data
+            else:
+                first_name = user_data[0]
+                second_name = ''
             if query_text.lower() in first_name.lower() or query_text.lower() in second_name.lower():
                 results.append(create_article(*user, username=True))
     if results:
@@ -106,10 +112,10 @@ async def query_username_list(query: InlineQuery, google_sheet: GoogleSheet, con
 
 
 def setup(dp: Dispatcher):
-    dp.register_message_handler(language_cmd, text=['Російська', 'Українська'], state=AuthSG.Lang)
+    dp.register_message_handler(language_cmd, text=['Русский', 'Українська'], state=AuthSG.Lang)
     dp.register_message_handler(repeat_authorization_cmd, text=[Buttons.menu.auth_bt['ua'], Buttons.menu.auth_bt['ru']],
                                 state='*')
-    dp.register_message_handler(save_user_email,  IsEmailMethod(), state=AuthSG.AuthData)
+    dp.register_message_handler(save_user_email, IsEmailMethod(), state=AuthSG.AuthData)
     dp.register_inline_handler(query_user_list, state=AuthSG.all_states)
     dp.register_inline_handler(query_username_list, state=[SendSG.User, DeleteSG.User])
 
@@ -127,5 +133,3 @@ def create_article(full_name, auth_data, username: bool = False):
 
 def create_custom_mention(name: str, user_id: int) -> str:
     return f'<a href="tg://user?id={str(user_id)}">{name}</a>'
-
-
